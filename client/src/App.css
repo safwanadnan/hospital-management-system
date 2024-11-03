@@ -1,0 +1,158 @@
+/* Container styles */
+.App {
+  padding: 2rem;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+/* Header styles */
+.app-header {
+  text-align: center;
+  margin-bottom: 3rem;
+}
+
+.app-title {
+  color: #ff4500;
+  font-size: 2.5em;
+  margin-bottom: 0.5rem;
+}
+
+.app-subtitle {
+  color: #666;
+  font-size: 1.2em;
+}
+
+/* Button container */
+.button-container {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 2rem;
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 1rem;
+}
+
+/* Link wrapper */
+.panel-link {
+  text-decoration: none;
+  display: block;
+}
+
+/* Button styles */
+.panel-button {
+  width: 100%;
+  min-height: 200px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+  padding: 1.5rem;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  background: white;
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+/* Icon styles */
+.panel-icon {
+  font-size: 2.5rem;
+  margin-bottom: 1rem;
+}
+
+/* Button text */
+.panel-button span {
+  font-size: 1.2rem;
+  font-weight: 500;
+  text-align: center;
+}
+
+/* Button variants */
+.receptionist-panel {
+  background: linear-gradient(135deg, #ffffff 0%, #f6f8fd 100%);
+  color: #2c3e50;
+}
+
+.admin-panel {
+  background: linear-gradient(135deg, #ffffff 0%, #f8f4fc 100%);
+  color: #6c3483;
+}
+
+.medical-tests {
+  background: linear-gradient(135deg, #ffffff 0%, #f0f9f0 100%);
+  color: #27ae60;
+}
+
+.medicines {
+  background: linear-gradient(135deg, #ffffff 0%, #f0f9ff 100%);
+  color: #2980b9;
+}
+
+/* Hover effects */
+.panel-button:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 8px 15px rgba(0, 0, 0, 0.1);
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .button-container {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+    padding: 1rem;
+  }
+
+  .panel-button {
+    min-height: 150px;
+  }
+
+  .app-title {
+    font-size: 2em;
+  }
+}
+
+/* CSS Variables for theming */
+:root {
+  --primary-color: #ff4500;
+  --text-primary: #2c3e50;
+  --text-secondary: #666;
+  --gradient-receptionist: linear-gradient(135deg, #ffffff 0%, #f6f8fd 100%);
+  --gradient-admin: linear-gradient(135deg, #ffffff 0%, #f8f4fc 100%);
+  --gradient-medical: linear-gradient(135deg, #ffffff 0%, #f0f9f0 100%);
+  --gradient-medicines: linear-gradient(135deg, #ffffff 0%, #f0f9ff 100%);
+  --shadow: 0 8px 15px rgba(0, 0, 0, 0.1);
+}
+
+/* Improved button accessibility */
+.panel-button:focus {
+  outline: 3px solid var(--primary-color);
+  outline-offset: 2px;
+}
+
+.panel-button:focus:not(:focus-visible) {
+  outline: none;
+}
+
+/* Loading state */
+.loading {
+  text-align: center;
+  padding: 2rem;
+  font-size: 1.2rem;
+}
+
+/* Not Found page */
+.not-found {
+  text-align: center;
+  padding: 3rem;
+}
+
+/* Print styles */
+@media print {
+  .button-container {
+    display: none;
+  }
+  
+  .app-header {
+    margin-bottom: 0;
+  }
+}
