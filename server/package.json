@@ -1,0 +1,17 @@
+{
+  "name": "hospital-management-server",
+  "version": "1.0.0",
+  "description": "Backend server for the hospital management system",
+  "main": "app.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node index.js"
+  },
+  "author": "Safwan",
+  "license": "ISC",
+  "dependencies": {
+    "dotenv": "^16.4.5",
+    "express": "^4.21.1",
+    "oracledb": "^6.6.0"
+  }
+}
