@@ -34,9 +34,63 @@ function BillGeneration() {
     );
   };
 
-  const handleGenerateBill = () => {
-    // Add logic to generate and save bill
-    console.log('Generating bill...');
+  const searchPatient = async () => {
+    if (!patientId.trim()) {
+      // Add error state and display
+      return;
+    }
+
+    try {
+      const response = await fetch(`http://localhost:5000/api/patient-bill/${patientId}`);
+      if (!response.ok) {
+        throw new Error('Patient not found');
+      }
+
+      const data = await response.json();
+      
+      setPatientDetails({
+        name: data.patientDetails.name,
+        gender: data.patientDetails.gender,
+        address: data.patientDetails.address,
+        diseaseTreated: data.patientDetails.diseaseTreated
+      });
+      
+      setMedicines(data.medicines);
+      setTests(data.tests);
+      setRoomBill(data.roomCharges.toString());
+      setOtherCharges('0');
+    } catch (error) {
+      console.error('Error fetching patient details:', error);
+      // Add error state and display
+    }
+  };
+
+  const handleGenerateBill = async () => {
+    try {
+      const response = await fetch('http://localhost:5000/api/generate-bill', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          patientId: patientId,
+          medicineCost: calculateTotalMedicineCost(),
+          testCost: calculateTotalTestsCost(),
+          roomCharges: Number(roomBill),
+          otherCharges: Number(otherCharges)
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to generate bill');
+      }
+
+      alert('Bill generated successfully');
+      handleClearFields();
+    } catch (error) {
+      console.error('Error generating bill:', error);
+      alert('Failed to generate bill');
+    }
   };
 
   const handleClearFields = () => {
@@ -65,12 +119,15 @@ function BillGeneration() {
         <div className="patient-section">
           <div className="form-group">
             <label htmlFor="patientId">Enter Patient ID</label>
-            <input
-              type="text"
-              id="patientId"
-              value={patientId}
-              onChange={(e) => setPatientId(e.target.value)}
-            />
+            <div className="search-input-group">
+              <input
+                type="text"
+                id="patientId"
+                value={patientId}
+                onChange={(e) => setPatientId(e.target.value)}
+              />
+              <button onClick={searchPatient}>Search</button>
+            </div>
           </div>
 
           <div className="details-card">

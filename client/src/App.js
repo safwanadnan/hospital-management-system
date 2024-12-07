@@ -51,6 +51,11 @@ const BillGeneration = React.lazy(() => import('./pages/BillGeneration'));
 const SearchPatient = React.lazy(() => import('./pages/SearchPatient'));
 const UpdatePatientRecord = React.lazy(() => import('./pages/UpdatePatientRecord'));
 const PatientRegistration = React.lazy(() => import('./pages/PatientRegistration'));
+const AdminDashboard = React.lazy(() => import('./pages/AdminDashboard'));
+const ManageDoctors = React.lazy(() => import('./pages/ManageDoctors'));
+const ManageNurses = React.lazy(() => import('./pages/ManageNurses'));
+const ManageDepartments = React.lazy(() => import('./pages/ManageDepartments'));
+const ManageRooms = React.lazy(() => import('./pages/ManageRooms'));
 
 function NotFound() {
   return (
@@ -69,6 +74,11 @@ function App() {
           <Route path="/" element={<HomePage />} />
           <Route path="/receptionist" element={<ReceptionistPanel />} />
           <Route path="/admin" element={<AdminPanel />} />
+          <Route path="/admin/dashboard" element={<AdminDashboard />} />
+          <Route path="/admin/doctors" element={<ManageDoctors />} />
+          <Route path="/admin/nurses" element={<ManageNurses />} />
+          <Route path="/admin/departments" element={<ManageDepartments />} />
+          <Route path="/admin/rooms" element={<ManageRooms />} />
           <Route path="/medical-tests" element={<MedicalTests />} />
           <Route path="/medicines" element={<PharmaceuticalStore />} />
           <Route path="/bill-generation" element={<BillGeneration />} />

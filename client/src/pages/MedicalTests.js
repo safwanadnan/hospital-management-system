@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FaArrowLeft } from 'react-icons/fa';
 import './MedicalTests.css';
@@ -8,23 +8,49 @@ function MedicalTests() {
   const [patientId, setPatientId] = useState('');
   const [selectedTest, setSelectedTest] = useState('X-RAY');
   const [tests, setTests] = useState([]);
+  const [availableTests, setAvailableTests] = useState([]);
 
-  const testOptions = [
-    'X-RAY',
-    'Blood Test',
-    'MRI',
-    'CT Scan',
-    'Ultrasound',
-    // Add more test options as needed
-  ];
+  useEffect(() => {
+    // Fetch available tests when component mounts
+    fetchAvailableTests();
+  }, []);
 
-  const handleSave = () => {
+  const fetchAvailableTests = async () => {
+    try {
+      const response = await fetch('http://localhost:5000/api/tests');
+      const data = await response.json();
+      setAvailableTests(data);
+    } catch (error) {
+      console.error('Error fetching tests:', error);
+    }
+  };
+
+  const handleSave = async () => {
     if (patientId && selectedTest) {
-      const newTest = {
-        sno: tests.length + 1,
-        testName: selectedTest
-      };
-      setTests([...tests, newTest]);
+      try {
+        const selectedTestObj = availableTests.find(t => t.TNAME === selectedTest);
+        
+        const response = await fetch('http://localhost:5000/api/patient-test', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            patientId: parseInt(patientId),
+            testId: selectedTestObj.TID
+          }),
+        });
+
+        if (response.ok) {
+          const newTest = {
+            sno: tests.length + 1,
+            testName: selectedTest
+          };
+          setTests([...tests, newTest]);
+        }
+      } catch (error) {
+        console.error('Error saving test:', error);
+      }
     }
   };
 
@@ -61,9 +87,9 @@ function MedicalTests() {
               value={selectedTest}
               onChange={(e) => setSelectedTest(e.target.value)}
             >
-              {testOptions.map((test) => (
-                <option key={test} value={test}>
-                  {test}
+              {availableTests.map((test) => (
+                <option key={test.TID} value={test.TNAME}>
+                  {test.TNAME}
                 </option>
               ))}
             </select>

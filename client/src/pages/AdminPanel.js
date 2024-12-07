@@ -5,13 +5,39 @@ import './AdminPanel.css';
 
 function AdminPanel() {
   const navigate = useNavigate();
-  const [userId, setUserId] = useState('');
+  const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
 
-  const handleLogin = (e) => {
+  const handleLogin = async (e) => {
     e.preventDefault();
-    // Add login logic here
-    console.log('Login attempted with:', userId, password);
+    setError('');
+    setLoading(true);
+
+    try {
+      const response = await fetch('http://localhost:5000/api/admin/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ username, password }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        // Store admin session info
+        localStorage.setItem('adminUsername', data.username);
+        navigate('/admin/dashboard');
+      } else {
+        setError(data.error || 'Login failed');
+      }
+    } catch (err) {
+      setError('Error connecting to server');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -22,14 +48,17 @@ function AdminPanel() {
       
       <h1 className="admin-title">ADMIN PANEL</h1>
       
+      {error && <div className="error-message">{error}</div>}
+      
       <form className="login-form" onSubmit={handleLogin}>
         <div className="form-group">
-          <label htmlFor="userId">User ID</label>
+          <label htmlFor="username">Username</label>
           <input
             type="text"
-            id="userId"
-            value={userId}
-            onChange={(e) => setUserId(e.target.value)}
+            id="username"
+            value={username}
+            onChange={(e) => setUsername(e.target.value)}
+            required
           />
         </div>
         
@@ -40,11 +69,12 @@ function AdminPanel() {
             id="password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
+            required
           />
         </div>
         
-        <button type="submit" className="login-button">
-          Login
+        <button type="submit" className="login-button" disabled={loading}>
+          {loading ? 'Logging in...' : 'Login'}
         </button>
       </form>
     </div>

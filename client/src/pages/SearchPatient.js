@@ -8,29 +8,46 @@ function SearchPatient() {
   const [searchType, setSearchType] = useState('name');
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
 
-  const handleSearch = () => {
-    // Mock data - replace with actual API call
-    const mockData = [
-      {
-        patientId: 'P001',
-        patientName: 'John Doe',
-        gender: 'Male',
-        address: '123 Main St',
-        doctorAssigned: 'Dr. Smith',
-        roomAdmitted: '301',
-        dateAdmitted: '2024-01-15',
-        dateDischarged: '2024-01-20'
+  const handleSearch = async () => {
+    if (!searchQuery.trim()) {
+      setError('Please enter a search term');
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+
+    try {
+      const response = await fetch(
+        `http://localhost:5000/api/search-patients?searchType=${searchType}&searchQuery=${encodeURIComponent(searchQuery)}`
+      );
+
+      if (!response.ok) {
+        throw new Error('Search failed');
       }
-      // Add more mock data as needed
-    ];
-    setSearchResults(mockData);
+
+      const data = await response.json();
+      setSearchResults(data);
+      
+      if (data.length === 0) {
+        setError('No patients found');
+      }
+    } catch (error) {
+      console.error('Error searching patients:', error);
+      setError('Error searching patients. Please try again.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleClearFields = () => {
     setSearchType('name');
     setSearchQuery('');
     setSearchResults([]);
+    setError(null);
   };
 
   return (
@@ -74,44 +91,48 @@ function SearchPatient() {
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder={`Enter patient ${searchType === 'name' ? 'name' : 'ID'}`}
             />
-            <button className="search-button" onClick={handleSearch}>
-              <FaSearch /> SEARCH
+            <button className="search-button" onClick={handleSearch} disabled={loading}>
+              <FaSearch /> {loading ? 'Searching...' : 'SEARCH'}
             </button>
           </div>
+          
+          {error && <div className="error-message">{error}</div>}
         </div>
 
-        <div className="results-section">
-          <div className="table-container">
-            <table className="results-table">
-              <thead>
-                <tr>
-                  <th>Patient ID</th>
-                  <th>Patient Name</th>
-                  <th>Gender</th>
-                  <th>Address</th>
-                  <th>Doctor Assigned</th>
-                  <th>Room Admitted</th>
-                  <th>Date Admitted</th>
-                  <th>Date Discharged</th>
-                </tr>
-              </thead>
-              <tbody>
-                {searchResults.map((patient, index) => (
-                  <tr key={index}>
-                    <td>{patient.patientId}</td>
-                    <td>{patient.patientName}</td>
-                    <td>{patient.gender}</td>
-                    <td>{patient.address}</td>
-                    <td>{patient.doctorAssigned}</td>
-                    <td>{patient.roomAdmitted}</td>
-                    <td>{patient.dateAdmitted}</td>
-                    <td>{patient.dateDischarged || '-'}</td>
+        {searchResults.length > 0 && (
+          <div className="results-section">
+            <div className="table-container">
+              <table className="results-table">
+                <thead>
+                  <tr>
+                    <th>Patient ID</th>
+                    <th>Patient Name</th>
+                    <th>Gender</th>
+                    <th>Address</th>
+                    <th>Doctor Assigned</th>
+                    <th>Room Admitted</th>
+                    <th>Date Admitted</th>
+                    <th>Date Discharged</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {searchResults.map((patient, index) => (
+                    <tr key={index}>
+                      <td>{patient.patientId}</td>
+                      <td>{patient.patientName}</td>
+                      <td>{patient.gender}</td>
+                      <td>{patient.address}</td>
+                      <td>{patient.doctorAssigned}</td>
+                      <td>{patient.roomAdmitted}</td>
+                      <td>{patient.dateAdmitted || '-'}</td>
+                      <td>{patient.dateDischarged || '-'}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
-        </div>
+        )}
 
         <button className="clear-button" onClick={handleClearFields}>
           <FaTimesCircle /> CLEAR FIELDS

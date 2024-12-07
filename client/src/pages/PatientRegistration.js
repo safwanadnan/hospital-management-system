@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FaArrowLeft, FaSave, FaTimesCircle } from 'react-icons/fa';
 import './PatientRegistration.css';
@@ -6,6 +6,8 @@ import './PatientRegistration.css';
 function PatientRegistration() {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('details');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
   const [formData, setFormData] = useState({
     patientId: '',
     firstName: '',
@@ -28,6 +30,22 @@ function PatientRegistration() {
   const bloodGroups = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
   const problems = ['ALLERGY', 'FEVER', 'INJURY', 'SURGERY', 'OTHER'];
 
+  useEffect(() => {
+    // Get next available patient ID when component mounts
+    const fetchNextPatientId = async () => {
+      try {
+        const response = await fetch('http://localhost:5000/api/next-patient-id');
+        if (!response.ok) throw new Error('Failed to get next patient ID');
+        const data = await response.json();
+        setFormData(prev => ({ ...prev, patientId: data.nextId }));
+      } catch (error) {
+        console.error('Error fetching next patient ID:', error);
+      }
+    };
+
+    fetchNextPatientId();
+  }, []);
+
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({
@@ -36,10 +54,38 @@ function PatientRegistration() {
     }));
   };
 
-  const handleSave = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    // Add API call to save patient data
-    console.log('Saving patient data:', formData);
+    setLoading(true);
+    setError(null);
+
+    try {
+      const response = await fetch('http://localhost:5000/api/register-patient', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          ...formData,
+          phoneNumbers: [formData.mobileNo1, formData.mobileNo2].filter(Boolean),
+          isInPatient: activeTab === 'inPatient'
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to register patient');
+      }
+
+      const data = await response.json();
+      alert(`Patient registered successfully with ID: ${data.patientId}`);
+      handleClearFields();
+      navigate(-1);
+    } catch (err) {
+      console.error('Error registering patient:', err);
+      setError('Failed to register patient. Please try again.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleClearFields = () => {
@@ -69,6 +115,8 @@ function PatientRegistration() {
         <FaArrowLeft /> Back
       </button>
 
+      {error && <div className="error-message">{error}</div>}
+
       <div className="tabs">
         <button 
           className={`tab ${activeTab === 'details' ? 'active' : ''}`}
@@ -84,7 +132,7 @@ function PatientRegistration() {
         </button>
       </div>
 
-      <form className="registration-form" onSubmit={handleSave}>
+      <form className="registration-form" onSubmit={handleSubmit}>
         <div className="form-content">
           <div className="form-group">
             <label htmlFor="patientId">Patient ID</label>
@@ -305,10 +353,15 @@ function PatientRegistration() {
         </div>
 
         <div className="form-actions">
-          <button type="submit" className="save-button">
-            <FaSave /> SAVE
+          <button type="submit" className="save-button" disabled={loading}>
+            <FaSave /> {loading ? 'SAVING...' : 'SAVE'}
           </button>
-          <button type="button" className="clear-button" onClick={handleClearFields}>
+          <button 
+            type="button" 
+            className="clear-button" 
+            onClick={handleClearFields}
+            disabled={loading}
+          >
             <FaTimesCircle /> CLEAR FIELDS
           </button>
         </div>

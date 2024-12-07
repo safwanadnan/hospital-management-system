@@ -1,38 +1,71 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FaArrowLeft } from 'react-icons/fa';
 import './PharmaceuticalStore.css';
+import { medicineService } from '../services/medicineService';
 
 function PharmaceuticalStore() {
   const navigate = useNavigate();
   const [patientId, setPatientId] = useState('');
-  const [selectedMedicine, setSelectedMedicine] = useState('CROCINE');
+  const [selectedMedicine, setSelectedMedicine] = useState('');
   const [quantity, setQuantity] = useState(0);
   const [medicines, setMedicines] = useState([]);
+  const [availableMedicines, setAvailableMedicines] = useState([]);
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const medicineOptions = [
-    'CROCINE',
-    'PARACETAMOL',
-    'ASPIRIN',
-    'IBUPROFEN',
-    // Add more medicine options as needed
-  ];
+  useEffect(() => {
+    // Fetch available medicines when component mounts
+    fetchAvailableMedicines();
+  }, []);
 
-  const handleSave = () => {
+  const fetchAvailableMedicines = async () => {
+    setIsLoading(true);
+    try {
+      const response = await medicineService.getAllMedicines();
+      console.log('Medicines response:', response);
+      setAvailableMedicines(response.data);
+      if (response.data.length > 0) {
+        setSelectedMedicine(response.data[0].MNAME);
+      }
+    } catch (error) {
+      console.error('Error fetching medicines:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleSave = async () => {
     if (patientId && selectedMedicine && quantity > 0) {
-      const newMedicine = {
-        sno: medicines.length + 1,
-        medicineName: selectedMedicine,
-        quantity: quantity
-      };
-      setMedicines([...medicines, newMedicine]);
+      try {
+        const selectedMedicineObj = availableMedicines.find(m => m.MNAME === selectedMedicine);
+        
+        const response = await medicineService.addPatientMedicine({
+          patientId: parseInt(patientId),
+          medicines: [{
+            mid: selectedMedicineObj.MID,
+            quantity: quantity
+          }],
+          date: date
+        });
+
+        if (response.status === 200) {
+          const newMedicine = {
+            sno: medicines.length + 1,
+            medicineName: selectedMedicine,
+            quantity: quantity
+          };
+          setMedicines([...medicines, newMedicine]);
+        }
+      } catch (error) {
+        console.error('Error saving medicine:', error);
+      }
     }
   };
 
   const handleClear = () => {
     setPatientId('');
-    setSelectedMedicine('CROCINE');
+    setSelectedMedicine('');
     setQuantity(0);
     setMedicines([]);
   };
@@ -74,12 +107,22 @@ function PharmaceuticalStore() {
               id="selectMedicine"
               value={selectedMedicine}
               onChange={(e) => setSelectedMedicine(e.target.value)}
+              disabled={isLoading}
             >
-              {medicineOptions.map((medicine) => (
-                <option key={medicine} value={medicine}>
-                  {medicine}
-                </option>
-              ))}
+              {isLoading ? (
+                <option>Loading medicines...</option>
+              ) : availableMedicines.length === 0 ? (
+                <option>No medicines available</option>
+              ) : (
+                availableMedicines.map((medicine) => {
+                  console.log('Rendering medicine:', medicine);
+                  return (
+                    <option key={medicine.MID} value={medicine.MNAME}>
+                      {medicine.MNAME || 'Unnamed medicine'}
+                    </option>
+                  );
+                })
+              )}
             </select>
           </div>
           <div className="form-group">

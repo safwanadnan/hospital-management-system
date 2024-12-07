@@ -41,28 +41,28 @@
 }
 
 .form-group {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
+  margin-bottom: 1.5rem;
 }
 
-.form-group label {
+.form-label {
+  display: block;
+  margin-bottom: 0.5rem;
   font-weight: 500;
-  color: #2c3e50;
+  color: var(--neutral-700);
 }
 
-.form-group input {
-  padding: 10px;
-  border: 1px solid #ddd;
-  border-radius: 8px;
-  font-size: 1em;
-  transition: all 0.3s ease;
+.form-control {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--neutral-300);
+  border-radius: var(--border-radius-md);
+  transition: var(--transition-all);
 }
 
-.form-group input:focus {
+.form-control:focus {
   outline: none;
-  border-color: #3498db;
-  box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.1);
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
 }
 
 .table-card {
@@ -181,4 +181,28 @@
   .bill-content {
     padding: 1rem;
   }
+}
+
+/* Common table styles to add to components with tables */
+.table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+.table th {
+  background: var(--neutral-50);
+  color: var(--neutral-700);
+  font-weight: 600;
+  text-align: left;
+  padding: 0.75rem 1rem;
+}
+
+.table td {
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid var(--neutral-200);
+}
+
+.table tr:hover {
+  background: var(--neutral-50);
 } 
