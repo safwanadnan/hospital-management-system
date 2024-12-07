@@ -33,7 +33,7 @@ npm install
 1. Start the server
 ```bash
 cd server
-npm run dev
+npm start
 ```
 
 2. Start the client
