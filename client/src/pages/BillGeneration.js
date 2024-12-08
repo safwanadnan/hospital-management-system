@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FaArrowLeft, FaFileInvoice, FaTimesCircle } from 'react-icons/fa';
+import { FaArrowLeft, FaFileInvoice } from 'react-icons/fa';
 import './BillGeneration.css';
 
 function BillGeneration() {
