@@ -6,16 +6,12 @@ import './BillGeneration.css';
 function BillGeneration() {
   const navigate = useNavigate();
   const [patientId, setPatientId] = useState('');
-  const [patientDetails, setPatientDetails] = useState({
-    name: '',
-    gender: '',
-    address: '',
-    diseaseTreated: ''
-  });
+  const [patientDetails, setPatientDetails] = useState(null);
   const [medicines, setMedicines] = useState([]);
   const [tests, setTests] = useState([]);
-  const [roomBill, setRoomBill] = useState('');
-  const [otherCharges, setOtherCharges] = useState('');
+  const [roomBill, setRoomBill] = useState(0);
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
 
   const calculateTotalMedicineCost = () => {
     return medicines.reduce((total, med) => total + (med.totalCost || 0), 0);
@@ -29,45 +25,57 @@ function BillGeneration() {
     return (
       calculateTotalMedicineCost() +
       calculateTotalTestsCost() +
-      Number(roomBill || 0) +
-      Number(otherCharges || 0)
+      Number(roomBill || 0)
     );
   };
 
   const searchPatient = async () => {
     if (!patientId.trim()) {
-      // Add error state and display
+      setError('Please enter a Patient ID');
       return;
     }
 
+    setLoading(true);
+    setError('');
+
     try {
-      const response = await fetch(`http://localhost:5000/api/patient-bill/${patientId}`);
-      if (!response.ok) {
-        throw new Error('Patient not found');
+      const response = await fetch(`http://localhost:5000/api/bills/patient-bill/${patientId}`);
+      
+      // Check if the response is JSON
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        throw new Error('Server not responding properly. Please check if the server is running.');
       }
 
       const data = await response.json();
-      
-      setPatientDetails({
-        name: data.patientDetails.name,
-        gender: data.patientDetails.gender,
-        address: data.patientDetails.address,
-        diseaseTreated: data.patientDetails.diseaseTreated
-      });
-      
-      setMedicines(data.medicines);
-      setTests(data.tests);
-      setRoomBill(data.roomCharges.toString());
-      setOtherCharges('0');
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to fetch patient details');
+      }
+
+      if (!data.patientDetails) {
+        throw new Error('No patient found with this ID');
+      }
+
+      setPatientDetails(data.patientDetails);
+      setMedicines(data.medicines || []);
+      setTests(data.tests || []);
+      setRoomBill(data.roomCharges || 0);
     } catch (error) {
-      console.error('Error fetching patient details:', error);
-      // Add error state and display
+      console.error('Error:', error);
+      setError(error.message || 'Failed to connect to server. Please check if the server is running.');
+      setPatientDetails(null);
+      setMedicines([]);
+      setTests([]);
+      setRoomBill(0);
+    } finally {
+      setLoading(false);
     }
   };
 
   const handleGenerateBill = async () => {
     try {
-      const response = await fetch('http://localhost:5000/api/generate-bill', {
+      const response = await fetch('http://localhost:5000/api/bills/generate-bill', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -77,7 +85,7 @@ function BillGeneration() {
           medicineCost: calculateTotalMedicineCost(),
           testCost: calculateTotalTestsCost(),
           roomCharges: Number(roomBill),
-          otherCharges: Number(otherCharges)
+          otherCharges: 0
         })
       });
 
@@ -86,25 +94,16 @@ function BillGeneration() {
       }
 
       alert('Bill generated successfully');
-      handleClearFields();
+      // Clear all data after successful bill generation
+      setPatientId('');
+      setPatientDetails(null);
+      setMedicines([]);
+      setTests([]);
+      setRoomBill(0);
     } catch (error) {
-      console.error('Error generating bill:', error);
-      alert('Failed to generate bill');
+      console.error('Error:', error);
+      alert('Failed to generate bill: ' + error.message);
     }
-  };
-
-  const handleClearFields = () => {
-    setPatientId('');
-    setPatientDetails({
-      name: '',
-      gender: '',
-      address: '',
-      diseaseTreated: ''
-    });
-    setMedicines([]);
-    setTests([]);
-    setRoomBill('');
-    setOtherCharges('');
   };
 
   return (
@@ -116,7 +115,7 @@ function BillGeneration() {
       <h1 className="bill-title">BILL GENERATION</h1>
 
       <div className="bill-content">
-        <div className="patient-section">
+        <div className="search-section">
           <div className="form-group">
             <label htmlFor="patientId">Enter Patient ID</label>
             <div className="search-input-group">
@@ -125,171 +124,124 @@ function BillGeneration() {
                 id="patientId"
                 value={patientId}
                 onChange={(e) => setPatientId(e.target.value)}
+                placeholder="Enter Patient ID"
               />
-              <button onClick={searchPatient}>Search</button>
+              <button onClick={searchPatient} disabled={loading}>
+                {loading ? 'Searching...' : 'Search'}
+              </button>
             </div>
           </div>
-
-          <div className="details-card">
-            <h2>Patient Details</h2>
-            <div className="form-grid">
-              <div className="form-group">
-                <label htmlFor="name">Name</label>
-                <input
-                  type="text"
-                  id="name"
-                  value={patientDetails.name}
-                  onChange={(e) =>
-                    setPatientDetails({ ...patientDetails, name: e.target.value })
-                  }
-                />
-              </div>
-              <div className="form-group">
-                <label htmlFor="gender">Gender</label>
-                <input
-                  type="text"
-                  id="gender"
-                  value={patientDetails.gender}
-                  onChange={(e) =>
-                    setPatientDetails({ ...patientDetails, gender: e.target.value })
-                  }
-                />
-              </div>
-              <div className="form-group">
-                <label htmlFor="address">Address</label>
-                <input
-                  type="text"
-                  id="address"
-                  value={patientDetails.address}
-                  onChange={(e) =>
-                    setPatientDetails({ ...patientDetails, address: e.target.value })
-                  }
-                />
-              </div>
-              <div className="form-group">
-                <label htmlFor="disease">Disease Treated</label>
-                <input
-                  type="text"
-                  id="disease"
-                  value={patientDetails.diseaseTreated}
-                  onChange={(e) =>
-                    setPatientDetails({ ...patientDetails, diseaseTreated: e.target.value })
-                  }
-                />
-              </div>
-            </div>
-          </div>
+          {error && <div className="error-message">{error}</div>}
         </div>
 
-        <div className="billing-section">
-          <div className="table-card">
-            <h2>Medicines Given</h2>
-            <table className="bill-table">
-              <thead>
-                <tr>
-                  <th>S.No.</th>
-                  <th>Medicine Name</th>
-                  <th>Quantity</th>
-                  <th>Cost</th>
-                  <th>Total Cost</th>
-                </tr>
-              </thead>
-              <tbody>
-                {medicines.map((medicine, index) => (
-                  <tr key={index}>
-                    <td>{index + 1}</td>
-                    <td>{medicine.name}</td>
-                    <td>{medicine.quantity}</td>
-                    <td>{medicine.cost}</td>
-                    <td>{medicine.totalCost}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-            <div className="total-row">
-              <span>Total Medicines Cost</span>
-              <span>Rs. {calculateTotalMedicineCost()}</span>
+        {patientDetails && (
+          <>
+            <div className="details-card">
+              <h2>Patient Details</h2>
+              <div className="patient-info-grid">
+                <div className="info-item">
+                  <label>Name:</label>
+                  <span>{patientDetails.name}</span>
+                </div>
+                <div className="info-item">
+                  <label>Gender:</label>
+                  <span>{patientDetails.gender}</span>
+                </div>
+                <div className="info-item">
+                  <label>Address:</label>
+                  <span>{patientDetails.address}</span>
+                </div>
+                <div className="info-item">
+                  <label>Disease Treated:</label>
+                  <span>{patientDetails.diseaseTreated}</span>
+                </div>
+              </div>
             </div>
-          </div>
 
-          <div className="table-card">
-            <h2>Tests Performed</h2>
-            <table className="bill-table">
-              <thead>
-                <tr>
-                  <th>S.No.</th>
-                  <th>Test Name</th>
-                  <th>Cost</th>
-                </tr>
-              </thead>
-              <tbody>
-                {tests.map((test, index) => (
-                  <tr key={index}>
-                    <td>{index + 1}</td>
-                    <td>{test.name}</td>
-                    <td>{test.cost}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+            {medicines.length > 0 && (
+              <div className="table-card">
+                <h2>Medicines Given</h2>
+                <table className="bill-table">
+                  <thead>
+                    <tr>
+                      <th>S.No.</th>
+                      <th>Medicine Name</th>
+                      <th>Quantity</th>
+                      <th>Cost per Unit</th>
+                      <th>Total Cost</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {medicines.map((medicine, index) => (
+                      <tr key={index}>
+                        <td>{index + 1}</td>
+                        <td>{medicine.name}</td>
+                        <td>{medicine.quantity}</td>
+                        <td>${medicine.cost}</td>
+                        <td>${medicine.totalCost}</td>
+                      </tr>
+                    ))}
+                    <tr className="total-row">
+                      <td colSpan="4">Total Medicine Cost</td>
+                      <td>${calculateTotalMedicineCost()}</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            )}
 
-          <div className="summary-card">
-            <div className="summary-row">
-              <span>Total Tests Cost</span>
-              <div className="amount-input">
-                <span>Rs.</span>
-                <input
-                  type="number"
-                  value={calculateTotalTestsCost()}
-                  readOnly
-                />
+            {tests.length > 0 && (
+              <div className="table-card">
+                <h2>Tests Performed</h2>
+                <table className="bill-table">
+                  <thead>
+                    <tr>
+                      <th>S.No.</th>
+                      <th>Test Name</th>
+                      <th>Cost</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {tests.map((test, index) => (
+                      <tr key={index}>
+                        <td>{index + 1}</td>
+                        <td>{test.name}</td>
+                        <td>${test.cost}</td>
+                      </tr>
+                    ))}
+                    <tr className="total-row">
+                      <td colSpan="2">Total Test Cost</td>
+                      <td>${calculateTotalTestsCost()}</td>
+                    </tr>
+                  </tbody>
+                </table>
               </div>
-            </div>
-            <div className="summary-row">
-              <span>Room Bill</span>
-              <div className="amount-input">
-                <span>Rs.</span>
-                <input
-                  type="number"
-                  value={roomBill}
-                  onChange={(e) => setRoomBill(e.target.value)}
-                />
-              </div>
-            </div>
-            <div className="summary-row">
-              <span>Other Charges</span>
-              <div className="amount-input">
-                <span>Rs.</span>
-                <input
-                  type="number"
-                  value={otherCharges}
-                  onChange={(e) => setOtherCharges(e.target.value)}
-                />
-              </div>
-            </div>
-            <div className="summary-row total">
-              <span>Total Payable Amount</span>
-              <div className="amount-input">
-                <span>Rs.</span>
-                <input
-                  type="number"
-                  value={calculateTotalPayable()}
-                  readOnly
-                />
-              </div>
-            </div>
-          </div>
-        </div>
+            )}
 
-        <div className="action-buttons">
-          <button className="generate-button" onClick={handleGenerateBill}>
-            <FaFileInvoice /> GENERATE BILL
-          </button>
-          <button className="clear-button" onClick={handleClearFields}>
-            <FaTimesCircle /> CLEAR FIELDS
-          </button>
-        </div>
+            {roomBill > 0 && (
+              <div className="summary-card">
+                <h2>Room Charges</h2>
+                <div className="summary-row">
+                  <span>Room Bill</span>
+                  <span>${roomBill}</span>
+                </div>
+              </div>
+            )}
+
+            <div className="summary-card total">
+              <div className="summary-row">
+                <h2>Total Payable Amount</h2>
+                <h2>${calculateTotalPayable()}</h2>
+              </div>
+            </div>
+
+            <div className="action-buttons">
+              <button className="generate-button" onClick={handleGenerateBill}>
+                <FaFileInvoice /> GENERATE BILL
+              </button>
+            </div>
+          </>
+        )}
       </div>
     </div>
   );

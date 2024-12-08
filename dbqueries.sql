@@ -264,11 +264,6 @@ BEGIN
     END IF;
 END;
 //
-
-DROP TRIGGER handle_employee_deletion;
-DROP TRIGGER transfer_to_passive;
-DROP TRIGGER employee_on_delete;
-
 -- Create a single combined trigger
 CREATE OR REPLACE TRIGGER handle_employee_deletion
 BEFORE DELETE ON Employee
